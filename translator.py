@@ -9,11 +9,19 @@
 
 import json
 import os
+import sys
 import time
 from typing import Optional, List
 
 DEEPSEEK_URL = "https://api.deepseek.com/chat/completions"
 DEEPSEEK_MODEL = "deepseek-chat"
+
+
+def _app_dir() -> str:
+    """应用数据目录：源码模式=项目目录；exe 打包后=exe 所在目录"""
+    if getattr(sys, "frozen", False):
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(os.path.abspath(__file__))
 
 # 源语言（语音识别 + 翻译源）：显示名 -> 各后端代码
 SOURCE_LANGUAGES = {
@@ -107,10 +115,9 @@ class Translator:
 
     @staticmethod
     def _load_key_from_config() -> Optional[str]:
-        """从项目目录的 config.json 读取 deepseek_api_key"""
+        """从应用目录的 config.json 读取 deepseek_api_key"""
         try:
-            config_path = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "config.json")
+            config_path = os.path.join(_app_dir(), "config.json")
             if os.path.exists(config_path):
                 with open(config_path, encoding="utf-8") as f:
                     data = json.load(f)

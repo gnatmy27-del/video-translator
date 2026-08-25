@@ -12,6 +12,14 @@ from tkinter import ttk, filedialog, messagebox
 # 将当前目录加入路径，确保模块可导入
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+
+def _app_dir() -> str:
+    """应用数据目录：源码模式=项目目录；exe 打包后=exe 所在目录"""
+    if getattr(sys, "frozen", False):
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(os.path.abspath(__file__))
+
+
 from transcriber import JapaneseTranscriber
 from translator import Translator, SOURCE_LANGUAGES, TARGET_LANGUAGES
 from subtitle_gen import generate_srt
@@ -136,7 +144,7 @@ class VideoTranslatorApp:
         self._stop_flag = False
         self.last_srt_path = None  # 最近生成的字幕文件路径
         self._console_log_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "logs", "app.log")
+            _app_dir(), "logs", "app.log")
         self.log_text = None  # 运行日志框（在设置页创建）
         self._float_windows = []  # 兼容旧引用
         self._floating_log = None  # 兼容旧引用
@@ -154,7 +162,7 @@ class VideoTranslatorApp:
 
     @staticmethod
     def _config_path() -> str:
-        return os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+        return os.path.join(_app_dir(), "config.json")
 
     @staticmethod
     def _load_config() -> dict:
@@ -1472,7 +1480,7 @@ def _bring_existing_to_front() -> bool:
 def _redirect_console_to_log():
     """将 stdout/stderr 重定向到 logs/app.log，供调试终端查看"""
     try:
-        log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
+        log_dir = os.path.join(_app_dir(), "logs")
         os.makedirs(log_dir, exist_ok=True)
         log_path = os.path.join(log_dir, "app.log")
         # 日志文件过大时重新开始
