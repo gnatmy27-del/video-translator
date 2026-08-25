@@ -1,0 +1,7 @@
+{
+  "deepseek_api_key": "在这里填入你的 DeepSeek API Key（可选项，填入后翻译质量更高）",
+  "video_context": "",
+  "source_lang": "日语",
+  "target_lang": "中文(简体)",
+  "theme": "跟随系统"
+}

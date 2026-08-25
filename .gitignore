@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 运行产生的文件
+logs/
+config.json
+
+# 系统文件
+Thumbs.db
+.DS_Store
+desktop.ini
