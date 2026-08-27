@@ -1,8 +1,32 @@
 # 🎬 视频翻译工具（多语言）
 
+![License](https://img.shields.io/badge/license-MIT-green)
+![Platform](https://img.shields.io/badge/platform-Windows-blue)
+[![GitHub Release](https://img.shields.io/github/v/release/gnatmy27-del/video-translator)](https://github.com/gnatmy27-del/video-translator/releases)
+[![Stars](https://img.shields.io/github/stars/gnatmy27-del/video-translator)](https://github.com/gnatmy27-del/video-translator)
+
 把任意语言的视频自动转成字幕（`.srt` 文件），用 PotPlayer / VLC / 剪映等任意播放器加载字幕即可观看。
 
 **完全免费、开源、无需上传视频，隐私安全**。支持识别日语/英语/韩语/中文/粤语/法语/德语/西班牙语/俄语等 15 种语言，可翻译成中文/英语/日语/韩语等 11 种目标语言。
+
+## 📥 下载（免安装版，推荐新手）
+
+不想装 Python？直接下载**免安装 exe**，解压双击就能用：
+
+| 版本 | 下载 | 说明 |
+|---|---|---|
+| 🖥️ **Windows 免安装版** | [⬇️ video-translator-v1.0.0-windows-x64.zip](https://github.com/gnatmy27-del/video-translator/releases/latest) | 约 186MB。**双击即用，不需要安装任何东西**，适合所有人 |
+| 📦 源码版 | [⬇️ video-translator-v1.0.0-source.zip](https://github.com/gnatmy27-del/video-translator/releases/latest) | 适合有 Python 的开发者 |
+
+**免安装版使用**：解压 → 双击 `video-translator.exe` → 选视频 → 开始翻译。
+
+> ⚠️ 首次运行若提示「Windows 已保护你的电脑」，点 **更多信息 → 仍要运行** 即可（程序没有数字签名，属正常现象）。
+> 💡 翻译质量最好用 **DeepSeek AI**（免费注册、几毛钱一部电影），详见下方「常见问题」。
+
+---
+
+## 如果觉得好用
+**点个 ⭐ Star、分享给需要的人**，就是对我最大的支持！❤️
 
 ---
 
