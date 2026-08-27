@@ -106,6 +106,12 @@ class VideoTranslatorApp:
         self.root.title("视频翻译工具 - Video Translator")
         self.root.geometry("720x680")
         self.root.minsize(640, 560)
+        # 只调整主窗口尺寸：第一页内容较高，默认高度调大到能完整显示（不超过屏幕高度）
+        try:
+            _screen_h = self.root.winfo_screenheight()
+            self.root.geometry(f"720x{min(860, _screen_h - 60)}")
+        except Exception:
+            pass
 
         # 状态变量
         self.video_path = tk.StringVar()
@@ -155,10 +161,6 @@ class VideoTranslatorApp:
                 self._log_offset = os.path.getsize(self._console_log_path)
         except Exception:
             pass
-
-        # 页签滚动：内容超高时可上下滚动，窗口高度自适应内容
-        self._tab_canvases = []
-        self._tab_contents = []
 
         self._build_ui()
         self._poll_log_file()
@@ -278,18 +280,11 @@ class VideoTranslatorApp:
         style.configure("TProgressbar", troughcolor=T["panel"], background=T["accent"],
                         borderwidth=0)
 
-        # 页签滚动条
-        style.configure("Vertical.TScrollbar", background=T["panel"],
-                        troughcolor=T["bg"], bordercolor=T["bg"], arrowcolor=T["fg"])
-
         # 主窗口和直接创建的 tk 控件
         self.root.configure(bg=T["bg"])
         try:
             if getattr(self, "mdic", None) is not None:
                 self.mdic.configure(bg=T["bg"])
-            # 页签滚动画布背景随主题切换
-            for _c in getattr(self, "_tab_canvases", []):
-                _c.configure(bg=T["bg"])
             if self.log_text is not None:
                 self.log_text.configure(bg=T["log_bg"], fg=T["log_fg"],
                                         insertbackground=T["log_fg"])
@@ -308,110 +303,28 @@ class VideoTranslatorApp:
             pass
 
     def _build_ui(self):
-        """构建界面（标准版：三个页签，内容超高时右侧滑块滚动，窗口高度自适应）"""
+        """构建界面（标准版：三个页签，不支持多窗口分屏）"""
         # ===== 顶部分类页签 =====
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(fill=tk.BOTH, expand=True)
 
         # ===== 页签①：视频翻译字幕 =====
-        main = ttk.Frame(self.notebook)
+        main = ttk.Frame(self.notebook, padding=12)
         self.notebook.add(main, text="① 视频翻译字幕")
-        content1 = ttk.Frame(main, padding=12)
-        self._build_translate_content(content1)
-        self._wrap_scrollable(main, content1)
+        self._build_translate_content(main)
 
         # ===== 页签②：修改已有字幕 =====
-        tab_edit = ttk.Frame(self.notebook)
+        tab_edit = ttk.Frame(self.notebook, padding=12)
         self.notebook.add(tab_edit, text="② 修改已有字幕")
-        content2 = ttk.Frame(tab_edit, padding=12)
-        self._build_edit_content(content2)
-        self._wrap_scrollable(tab_edit, content2)
+        self._build_edit_content(tab_edit)
 
         # ===== 页签③：设置 =====
-        tab_settings = ttk.Frame(self.notebook)
+        tab_settings = ttk.Frame(self.notebook, padding=16)
         self.notebook.add(tab_settings, text="③ 设置")
-        content3 = ttk.Frame(tab_settings, padding=16)
-        self._build_settings_content(content3)
-        self._wrap_scrollable(tab_settings, content3)
+        self._build_settings_content(tab_settings)
 
         # 应用主题
         self._apply_theme()
-        # 窗口高度自适应内容（内容超高时配合右侧滑块）
-        self._fit_window()
-        # 窗口显示后强制同步一次画布，并监听页签切换，避免任何渲染时序问题
-        self.notebook.bind("<<NotebookTabChanged>>",
-                           lambda _e: self._sync_all_canvases())
-        self.root.after(400, self._sync_all_canvases)
-
-    def _wrap_scrollable(self, parent, content):
-        """把页签内容放进右侧带滑块的滚动容器，内容超高时可上下滚动"""
-        canvas = tk.Canvas(parent, highlightthickness=0, bd=0)
-        vbar = ttk.Scrollbar(parent, orient=tk.VERTICAL, command=canvas.yview)
-        canvas.configure(yscrollcommand=vbar.set)
-        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        vbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-        win_id = canvas.create_window((0, 0), window=content, anchor="nw")
-        # 先给内容一个合理的初始宽度，避免布局前被压成 1px
-        canvas.itemconfigure(win_id, width=680)
-
-        def _sync(_=None):
-            try:
-                canvas.configure(scrollregion=canvas.bbox("all"))
-                cw = canvas.winfo_width()
-                if cw > 1:
-                    canvas.itemconfigure(win_id, width=cw)
-            except Exception:
-                pass
-
-        canvas.bind("<Configure>", _sync)
-        content.bind("<Configure>", _sync)
-
-        # 鼠标滚轮滚动页签；跳过日志等自带滚动条的控件
-        def _wheel(event):
-            canvas.yview_scroll(int(-event.delta / 120), "units")
-
-        canvas.bind("<MouseWheel>", _wheel)
-
-        def _bind_children(widget):
-            if widget is getattr(self, "log_text", None):
-                return
-            widget.bind("<MouseWheel>", _wheel)
-            for child in widget.winfo_children():
-                _bind_children(child)
-
-        _bind_children(content)
-
-        self._tab_canvases.append(canvas)
-        self._tab_contents.append(content)
-        return canvas
-
-    def _sync_all_canvases(self):
-        """强制同步所有页签滚动画布（窗口显示后/切换页签时调用，避免渲染时序问题）"""
-        try:
-            for cv in self._tab_canvases:
-                cv.update_idletasks()
-                cv.event_generate("<Configure>")
-                cv.update_idletasks()
-            print(f"[布局] 画布已同步 {len(self._tab_canvases)} 个: " +
-                  ", ".join(f"{cv.winfo_width()}x{cv.winfo_height()}" for cv in self._tab_canvases))
-        except Exception as e:  # noqa: BLE001
-            print(f"[布局] 同步异常: {e}")
-
-    def _fit_window(self):
-        """窗口高度自适应内容：内容矮则收缩，内容超高则按屏幕高度截断（配合滑块滚动）"""
-        self.root.update_idletasks()
-        try:
-            if not self._tab_contents:
-                return
-            max_h = max(c.winfo_reqheight() for c in self._tab_contents)
-            screen_h = self.root.winfo_screenheight()
-            # 页签栏约 45px + 窗口标题栏等约 35px
-            h = int(max_h + 80)
-            h = min(h, max(560, screen_h - 80))
-            self.root.geometry(f"720x{h}")
-        except Exception:
-            pass
 
     def _build_translate_content(self, main):
         """构建页签①内容（视频翻译字幕）"""
