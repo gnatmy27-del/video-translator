@@ -338,6 +338,10 @@ class VideoTranslatorApp:
         self._apply_theme()
         # 窗口高度自适应内容（内容超高时配合右侧滑块）
         self._fit_window()
+        # 窗口显示后强制同步一次画布，并监听页签切换，避免任何渲染时序问题
+        self.notebook.bind("<<NotebookTabChanged>>",
+                           lambda _e: self._sync_all_canvases())
+        self.root.after(400, self._sync_all_canvases)
 
     def _wrap_scrollable(self, parent, content):
         """把页签内容放进右侧带滑块的滚动容器，内容超高时可上下滚动"""
@@ -348,11 +352,17 @@ class VideoTranslatorApp:
         vbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         win_id = canvas.create_window((0, 0), window=content, anchor="nw")
+        # 先给内容一个合理的初始宽度，避免布局前被压成 1px
+        canvas.itemconfigure(win_id, width=680)
 
         def _sync(_=None):
-            canvas.configure(scrollregion=canvas.bbox("all"))
-            if canvas.winfo_width() > 1:
-                canvas.itemconfigure(win_id, width=canvas.winfo_width())
+            try:
+                canvas.configure(scrollregion=canvas.bbox("all"))
+                cw = canvas.winfo_width()
+                if cw > 1:
+                    canvas.itemconfigure(win_id, width=cw)
+            except Exception:
+                pass
 
         canvas.bind("<Configure>", _sync)
         content.bind("<Configure>", _sync)
@@ -375,6 +385,18 @@ class VideoTranslatorApp:
         self._tab_canvases.append(canvas)
         self._tab_contents.append(content)
         return canvas
+
+    def _sync_all_canvases(self):
+        """强制同步所有页签滚动画布（窗口显示后/切换页签时调用，避免渲染时序问题）"""
+        try:
+            for cv in self._tab_canvases:
+                cv.update_idletasks()
+                cv.event_generate("<Configure>")
+                cv.update_idletasks()
+            print(f"[布局] 画布已同步 {len(self._tab_canvases)} 个: " +
+                  ", ".join(f"{cv.winfo_width()}x{cv.winfo_height()}" for cv in self._tab_canvases))
+        except Exception as e:  # noqa: BLE001
+            print(f"[布局] 同步异常: {e}")
 
     def _fit_window(self):
         """窗口高度自适应内容：内容矮则收缩，内容超高则按屏幕高度截断（配合滑块滚动）"""
